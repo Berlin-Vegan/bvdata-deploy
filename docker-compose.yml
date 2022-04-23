@@ -1,0 +1,60 @@
+version: '3.4'
+
+x-backend: &default-backend
+    image: ghcr.io/berlin-vegan/berlin-vegan-data/be:latest
+    restart: always
+    depends_on:
+        - postgres
+    env_file:
+        - .env
+
+services:
+    backend:
+        <<: *default-backend
+        volumes:
+            - dstatic:/app/static
+    celery-worker:
+        <<: *default-backend
+        depends_on:
+            - postgres
+            - redis
+            - backend
+        command: celery -A bvdata worker
+    celery-beat:
+        <<: *default-backend
+        depends_on:
+            - postgres
+            - redis
+            - celery-worker
+            - backend
+        command: celery -A bvdata beat
+    postgres:
+        image: postgres:14.2-alpine
+        restart: always
+        volumes:
+            - pgdata:/var/lib/postgresql/data/
+        environment:
+            - POSTGRES_DB=${DATABASE_NAME}
+            - POSTGRES_USER=${DATABASE_USER}
+            - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+    redis:
+        image: redis:alpine
+    frontend:
+        image: ghcr.io/berlin-vegan/berlin-vegan-data/fe:latest
+        restart: always
+        depends_on:
+            - backend
+    entrypoint:
+        image: nginx:stable-alpine
+        restart: always
+        ports:
+            - "8000:8080"
+        volumes:
+            - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+            - dstatic:/var/www/dstatic
+        depends_on:
+            - backend
+            - frontend
+volumes:
+    pgdata:
+    dstatic:
