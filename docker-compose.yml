@@ -40,6 +40,7 @@ services:
             - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
     redis:
         image: redis:alpine
+        restart: always
     frontend:
         image: ghcr.io/berlin-vegan/berlin-vegan-data/fe:latest
         restart: always
