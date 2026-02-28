@@ -18,14 +18,14 @@ services:
         <<: *default-backend
         depends_on:
             - postgres
-            - redis
+            - valkey
             - backend
         command: celery -A bvdata worker
     celery-beat:
         <<: *default-backend
         depends_on:
             - postgres
-            - redis
+            - valkey
             - celery-worker
             - backend
         command: celery -A bvdata beat
@@ -38,8 +38,8 @@ services:
             - POSTGRES_DB=${DATABASE_NAME}
             - POSTGRES_USER=${DATABASE_USER}
             - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
-    redis:
-        image: redis:alpine
+    valkey:
+        image: valkey/valkey:alpine
         restart: always
     frontend:
         image: ghcr.io/berlin-vegan/berlin-vegan-data/fe:latest
